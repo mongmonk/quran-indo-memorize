@@ -9,6 +9,11 @@ const ARABIC_EDITION = "quran-uthmani";
 export const fetchSurahs = async (): Promise<Surah[]> => {
   try {
     const response = await fetch(`${BASE_URL}/meta`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch surahs: ${response.status} ${response.statusText}`);
+    }
+    
     const data = await response.json();
     return data.data.surahs.references;
   } catch (error) {
@@ -22,10 +27,20 @@ export const fetchSurahWithTranslation = async (surahNumber: number): Promise<Su
   try {
     // Fetch Arabic text
     const arabicResponse = await fetch(`${BASE_URL}/surah/${surahNumber}/${ARABIC_EDITION}`);
+    
+    if (!arabicResponse.ok) {
+      throw new Error(`Failed to fetch Arabic text: ${arabicResponse.status} ${arabicResponse.statusText}`);
+    }
+    
     const arabicData: QuranResponse = await arabicResponse.json();
     
     // Fetch Indonesian translation
     const translationResponse = await fetch(`${BASE_URL}/surah/${surahNumber}/${INDONESIAN_EDITION}`);
+    
+    if (!translationResponse.ok) {
+      throw new Error(`Failed to fetch translation: ${translationResponse.status} ${translationResponse.statusText}`);
+    }
+    
     const translationData: QuranResponse = await translationResponse.json();
     
     // Combine Arabic and translation

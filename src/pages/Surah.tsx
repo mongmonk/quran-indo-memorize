@@ -9,15 +9,18 @@ import LoadingSpinner from "@/components/ui/loading-spinner";
 import ErrorMessage from "@/components/ui/error-message";
 import SurahHeader from "@/components/surah/SurahHeader";
 import AyahTabs from "@/components/surah/AyahTabs";
+import { useToast } from "@/hooks/use-toast";
 
 const Surah: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [surah, setSurah] = useState<SurahDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [memorizedAyahs, setMemorizedAyahs] = useState<number[]>([]);
   const [currentAyah, setCurrentAyah] = useState(1);
   const surahRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   
   useEffect(() => {
     const surahId = parseInt(id || "1");
@@ -25,22 +28,44 @@ const Surah: React.FC = () => {
     const loadSurah = async () => {
       try {
         setLoading(true);
+        setError(null);
+        setErrorDetails(null);
+        
+        console.log(`Attempting to fetch surah ${surahId}...`);
         const data = await fetchSurahWithTranslation(surahId);
+        
+        if (!data || !data.ayahs || data.ayahs.length === 0) {
+          throw new Error("Surah data is empty or invalid");
+        }
+        
+        console.log(`Successfully loaded surah ${surahId} with ${data.ayahs.length} ayahs`);
         setSurah(data);
-        setLoading(false);
         
         // Load memorization progress
         const progress = getProgress(surahId);
         setMemorizedAyahs(progress);
       } catch (err) {
-        setError("Terjadi kesalahan saat memuat surah.");
+        console.error(`Error in loadSurah for surah ${surahId}:`, err);
+        setError("Tidak dapat memuat surah");
+        
+        if (err instanceof Error) {
+          setErrorDetails(err.message);
+        } else {
+          setErrorDetails("Terjadi kesalahan saat memuat data surah dari server.");
+        }
+        
+        toast({
+          title: "Error",
+          description: "Gagal memuat surah. Silakan coba lagi nanti.",
+          variant: "destructive",
+        });
+      } finally {
         setLoading(false);
-        console.error(err);
       }
     };
     
     loadSurah();
-  }, [id]);
+  }, [id, toast]);
   
   const handleMemorizationChange = (ayahNumber: number, isMemorized: boolean) => {
     if (isMemorized) {
@@ -62,10 +87,14 @@ const Surah: React.FC = () => {
     scrollToAyah(ayahNumber);
   };
   
+  const handleRetry = () => {
+    window.location.reload();
+  };
+  
   if (loading) {
     return (
       <Layout>
-        <LoadingSpinner />
+        <LoadingSpinner message="Memuat surah..." />
       </Layout>
     );
   }
@@ -74,8 +103,9 @@ const Surah: React.FC = () => {
     return (
       <Layout>
         <ErrorMessage 
-          message={error || "Tidak dapat memuat surah."} 
-          onRetry={() => window.location.reload()} 
+          message={error || "Tidak dapat memuat surah"} 
+          details={errorDetails || undefined}
+          onRetry={handleRetry} 
         />
       </Layout>
     );

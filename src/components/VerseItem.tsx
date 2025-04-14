@@ -1,9 +1,10 @@
 
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { Ayah } from "@/types/quran";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bookmark, Play, Pause, Eye, EyeOff, Check } from "lucide-react";
+import { Bookmark, Play, Pause, Eye, EyeOff, Check, ExternalLink } from "lucide-react";
 import { saveProgress } from "@/services/quranService";
 
 interface VerseItemProps {
@@ -59,6 +60,15 @@ const VerseItem: React.FC<VerseItemProps> = ({
             >
               {isPlaying ? <Pause size={18} /> : <Play size={18} />}
             </Button>
+            <Link to={`/ayah/${surahId}/${ayah.numberInSurah}`}>
+              <Button
+                variant="ghost"
+                size="icon"
+                title="Lihat halaman ayat"
+              >
+                <ExternalLink size={18} />
+              </Button>
+            </Link>
           </div>
           <div className="flex space-x-1">
             <Button

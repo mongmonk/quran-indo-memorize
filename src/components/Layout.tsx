@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { BookOpen, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -10,6 +10,9 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+  // Use location to determine if we're in a router context
+  const location = useLocation();
+
   return (
     <div className="min-h-screen pattern-bg flex flex-col">
       {/* Header */}
@@ -32,7 +35,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <Link to="/" className="px-4 py-2 hover:bg-primary/10 rounded-md">
                     Daftar Surah
                   </Link>
-                  <Link to="/" className="px-4 py-2 hover:bg-primary/10 rounded-md">
+                  <Link to="/progress" className="px-4 py-2 hover:bg-primary/10 rounded-md">
                     Kemajuan Hafalan
                   </Link>
                 </div>
@@ -44,7 +47,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Link to="/" className="hover:underline">
               Daftar Surah
             </Link>
-            <Link to="/" className="hover:underline">
+            <Link to="/progress" className="hover:underline">
               Kemajuan Hafalan
             </Link>
           </nav>

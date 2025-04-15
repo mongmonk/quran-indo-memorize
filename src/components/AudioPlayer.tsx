@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from "react";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { SurahDetail } from "@/types/quran";
@@ -24,21 +24,17 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
-  // Initialize audio when component mounts or when currentAyah changes
+  // Initialize audio when component mounts
   useEffect(() => {
-    if (surah && surah.ayahs && surah.ayahs.length > 0) {
-      const audioUrl = surah.ayahs[currentAyah - 1]?.audioUrl;
-      
+    if (surah && surah.audioUrl) {
       if (audioRef.current) {
         audioRef.current.pause();
         setIsPlaying(false);
         
-        if (audioUrl) {
-          audioRef.current.src = audioUrl;
-          audioRef.current.load();
-        }
+        audioRef.current.src = surah.audioUrl;
+        audioRef.current.load();
       } else {
-        audioRef.current = new Audio(audioUrl);
+        audioRef.current = new Audio(surah.audioUrl);
       }
       
       const audio = audioRef.current;
@@ -54,11 +50,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       const handleAudioEnd = () => {
         setIsPlaying(false);
         setCurrentTime(0);
-        
-        // Auto play next ayah if available
-        if (currentAyah < surah.ayahs.length) {
-          onAyahChange(currentAyah + 1);
-        }
       };
       
       // Audio event listeners
@@ -76,7 +67,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         audio.removeEventListener("ended", handleAudioEnd);
       };
     }
-  }, [currentAyah, surah]);
+  }, [surah]);
   
   // Update volume when it changes
   useEffect(() => {
@@ -102,18 +93,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     if (audioRef.current) {
       audioRef.current.muted = !isMuted;
       setIsMuted(!isMuted);
-    }
-  };
-  
-  const handlePrevious = () => {
-    if (currentAyah > 1) {
-      onAyahChange(currentAyah - 1);
-    }
-  };
-  
-  const handleNext = () => {
-    if (currentAyah < surah.ayahs.length) {
-      onAyahChange(currentAyah + 1);
     }
   };
   
@@ -146,22 +125,13 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   };
   
   return (
-    <div className="bg-card shadow-lg rounded-lg p-4 fixed bottom-0 left-0 right-0 z-10 border-t">
+    <div className="bg-gradient-to-r from-green-50 to-emerald-100 shadow-lg rounded-lg p-4 fixed bottom-0 left-0 right-0 z-10 border-t">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center space-x-2 w-full sm:w-auto">
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={handlePrevious}
-            disabled={currentAyah <= 1}
-          >
-            <SkipBack className="h-5 w-5" />
-          </Button>
-          
-          <Button
             variant="default"
             size="icon"
-            className="bg-primary rounded-full"
+            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-full"
             onClick={togglePlay}
           >
             {isPlaying ? (
@@ -169,15 +139,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
             ) : (
               <Play className="h-5 w-5 ml-0.5" />
             )}
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleNext}
-            disabled={currentAyah >= surah.ayahs.length}
-          >
-            <SkipForward className="h-5 w-5" />
           </Button>
         </div>
         
@@ -192,6 +153,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
               max={duration || 100}
               step={0.1}
               onValueChange={handleSeek}
+              className="accent-green-500"
             />
           </div>
           
@@ -215,11 +177,12 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
               max={1}
               step={0.01}
               onValueChange={handleVolumeChange}
+              className="accent-green-500"
             />
           </div>
           
           <div className="ml-2 text-sm text-muted-foreground whitespace-nowrap">
-            Ayat {currentAyah}/{surah.ayahs.length}
+            Surah {surah.number}: {surah.englishName}
           </div>
         </div>
       </div>

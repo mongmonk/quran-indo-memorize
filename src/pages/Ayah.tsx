@@ -2,50 +2,49 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { fetchAyah } from "@/services/quranService";
-import { Ayah as AyahType } from "@/types/quran";
+import { fetchAyah, fetchSurahWithTranslation } from "@/services/quranService";
+import { Ayah as AyahType, SurahDetail } from "@/types/quran";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import ErrorMessage from "@/components/ui/error-message";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Play, Pause } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AyahPage: React.FC = () => {
   const { surahId, ayahId } = useParams<{ surahId: string; ayahId: string }>();
   const [ayah, setAyah] = useState<AyahType | null>(null);
+  const [surah, setSurah] = useState<SurahDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audio] = useState(new Audio());
   const { toast } = useToast();
   
   const surahNumber = parseInt(surahId || "1");
   const ayahNumber = parseInt(ayahId || "1");
   
   useEffect(() => {
-    const loadAyah = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
         setError(null);
         setErrorDetails(null);
         
         console.log(`Attempting to fetch ayah ${ayahNumber} from surah ${surahNumber}...`);
-        const data = await fetchAyah(surahNumber, ayahNumber);
         
-        if (!data) {
+        // Fetch the surah first to get audio URL
+        const surahData = await fetchSurahWithTranslation(surahNumber);
+        setSurah(surahData);
+        
+        // Then get the specific ayah
+        const ayahData = await fetchAyah(surahNumber, ayahNumber);
+        
+        if (!ayahData) {
           throw new Error("Ayah data is empty or invalid");
         }
         
         console.log(`Successfully loaded ayah ${ayahNumber} from surah ${surahNumber}`);
-        setAyah(data);
-        
-        // Load audio
-        if (data.audioUrl) {
-          audio.src = data.audioUrl;
-          audio.load();
-        }
+        setAyah(ayahData);
       } catch (err) {
         console.error(`Error in loadAyah for surah ${surahNumber}, ayah ${ayahNumber}:`, err);
         setError("Tidak dapat memuat ayat");
@@ -66,32 +65,8 @@ const AyahPage: React.FC = () => {
       }
     };
     
-    loadAyah();
-    
-    // Clean up audio when component unmounts
-    return () => {
-      audio.pause();
-      audio.src = "";
-    };
-  }, [surahNumber, ayahNumber, audio, toast]);
-  
-  const handlePlayAudio = () => {
-    if (isPlaying) {
-      audio.pause();
-      setIsPlaying(false);
-    } else {
-      audio.play().catch(err => {
-        console.error("Error playing audio:", err);
-        toast({
-          title: "Error",
-          description: "Gagal memutar audio. Silakan coba lagi nanti.",
-          variant: "destructive",
-        });
-      });
-      audio.onended = () => setIsPlaying(false);
-      setIsPlaying(true);
-    }
-  };
+    loadData();
+  }, [surahNumber, ayahNumber, toast]);
   
   const handlePreviousAyah = () => {
     if (ayahNumber > 1) {
@@ -101,7 +76,10 @@ const AyahPage: React.FC = () => {
   };
   
   const handleNextAyah = () => {
-    return `/ayah/${surahNumber}/${ayahNumber + 1}`;
+    if (surah && ayahNumber < surah.numberOfAyahs) {
+      return `/ayah/${surahNumber}/${ayahNumber + 1}`;
+    }
+    return `/surah/${surahNumber}`;
   };
   
   const handleRetry = () => {
@@ -116,7 +94,7 @@ const AyahPage: React.FC = () => {
     );
   }
   
-  if (error || !ayah) {
+  if (error || !ayah || !surah) {
     return (
       <Layout>
         <ErrorMessage 
@@ -140,20 +118,12 @@ const AyahPage: React.FC = () => {
           </Link>
         </div>
         
-        <Card className="mb-8">
+        <Card className="mb-8 bg-gradient-to-br from-green-50 to-emerald-50 border-emerald-100">
           <CardContent className="p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">
-                Surah {surahNumber}, Ayat {ayahNumber}
+              <h2 className="text-xl font-semibold text-emerald-800">
+                Surah {surahNumber}: {surah.englishName}, Ayat {ayahNumber}
               </h2>
-              <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={handlePlayAudio}
-                title={isPlaying ? "Hentikan" : "Putar"}
-              >
-                {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-              </Button>
             </div>
             
             <p className="text-3xl arabic-text mb-6 leading-loose text-right">
@@ -168,14 +138,14 @@ const AyahPage: React.FC = () => {
         
         <div className="flex justify-between mt-8">
           <Link to={handlePreviousAyah()}>
-            <Button variant="outline">
+            <Button variant="outline" className="border-emerald-200 hover:bg-emerald-50">
               <ArrowLeft className="mr-2 h-4 w-4" />
               {ayahNumber > 1 ? "Ayat Sebelumnya" : "Kembali ke Surah"}
             </Button>
           </Link>
           
           <Link to={handleNextAyah()}>
-            <Button variant="outline">
+            <Button variant="outline" className="border-emerald-200 hover:bg-emerald-50">
               Ayat Selanjutnya
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

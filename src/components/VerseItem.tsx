@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Ayah } from "@/types/quran";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bookmark, Play, Pause, Eye, EyeOff, Check, ExternalLink } from "lucide-react";
+import { Bookmark, Eye, EyeOff, Check, ExternalLink } from "lucide-react";
 import { saveProgress } from "@/services/quranService";
 
 interface VerseItemProps {
@@ -20,23 +20,8 @@ const VerseItem: React.FC<VerseItemProps> = ({
   isMemorized,
   onMemorizationChange,
 }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
   const [hideArabic, setHideArabic] = useState(false);
   const [hideTranslation, setHideTranslation] = useState(false);
-  const [audio] = useState(new Audio(ayah.audioUrl));
-
-  const handlePlayAudio = () => {
-    if (isPlaying) {
-      audio.pause();
-      setIsPlaying(false);
-    } else {
-      audio.play().catch(err => {
-        console.error("Error playing audio:", err);
-      });
-      audio.onended = () => setIsPlaying(false);
-      setIsPlaying(true);
-    }
-  };
 
   const toggleMemorization = () => {
     const newStatus = !isMemorized;
@@ -52,14 +37,6 @@ const VerseItem: React.FC<VerseItemProps> = ({
             <span className="bg-secondary text-secondary-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm mr-2">
               {ayah.numberInSurah}
             </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handlePlayAudio}
-              title={isPlaying ? "Hentikan" : "Putar"}
-            >
-              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-            </Button>
             <Link to={`/ayah/${surahId}/${ayah.numberInSurah}`}>
               <Button
                 variant="ghost"

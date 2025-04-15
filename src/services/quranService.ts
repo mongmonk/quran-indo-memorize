@@ -43,6 +43,9 @@ export const fetchSurahWithTranslation = async (surahNumber: number): Promise<Su
       throw new Error(`Surah with number ${surahNumber} not found`);
     }
     
+    // Get the audio URL for the entire surah
+    const audioUrl = `https://ia600300.us.archive.org/27/items/AlQuranAudioOnly/Al-Quran_${surahNumber.toString().padStart(3, '0')}.mp3`;
+    
     // Create a SurahDetail object from the data
     const surahDetail: SurahDetail = {
       number: parseInt(surahData.nomor),
@@ -51,6 +54,7 @@ export const fetchSurahWithTranslation = async (surahNumber: number): Promise<Su
       englishNameTranslation: surahData.arti,
       numberOfAyahs: surahData.ayat.length,
       revelationType: surahData.type,
+      audioUrl: audioUrl,
       ayahs: surahData.ayat.map((ayah: any, index: number) => ({
         number: index + 1,
         text: ayah.ar,
@@ -58,7 +62,7 @@ export const fetchSurahWithTranslation = async (surahNumber: number): Promise<Su
         juz: 0, // Not provided in the data
         page: 0, // Not provided in the data
         translation: ayah.id,
-        audioUrl: `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${(surahNumber * 1000) + (index + 1)}.mp3`
+        audioUrl: '' // No individual audio URLs anymore
       }))
     };
     

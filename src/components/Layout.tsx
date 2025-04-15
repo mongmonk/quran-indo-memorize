@@ -16,7 +16,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen pattern-bg flex flex-col">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground shadow-md">
+      <header className="bg-gradient-to-r from-green-600 to-emerald-700 text-primary-foreground shadow-md">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <Link to="/" className="flex items-center space-x-2">
             <BookOpen size={24} />
@@ -60,10 +60,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
       
       {/* Footer */}
-      <footer className="bg-secondary text-secondary-foreground py-4">
+      <footer className="bg-gradient-to-r from-green-700 to-emerald-800 text-secondary-foreground py-4">
         <div className="container mx-auto px-4 text-center">
           <p>Quran Hafiz - Aplikasi Penghafal Al-Quran © {new Date().getFullYear()}</p>
-          <p className="text-sm mt-2">Data disediakan oleh alquran.cloud</p>
         </div>
       </footer>
     </div>

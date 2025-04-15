@@ -43,8 +43,8 @@ export const fetchSurahWithTranslation = async (surahNumber: number): Promise<Su
       throw new Error(`Surah with number ${surahNumber} not found`);
     }
     
-    // Get the audio URL for the entire surah
-    const audioUrl = `https://ia600300.us.archive.org/27/items/AlQuranAudioOnly/Al-Quran_${surahNumber.toString().padStart(3, '0')}.mp3`;
+    // Fix the audio URL to a more reliable source
+    const audioUrl = `https://server8.mp3quran.net/ahmad_huth/${surahNumber.toString().padStart(3, '0')}.mp3`;
     
     // Create a SurahDetail object from the data
     const surahDetail: SurahDetail = {

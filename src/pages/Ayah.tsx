@@ -122,7 +122,7 @@ const AyahPage: React.FC = () => {
           <CardContent className="p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-emerald-800">
-                Surah {surahNumber}: {surah.englishName}, Ayat {ayahNumber}
+                Surah {surah.englishName} (Ayat {ayahNumber})
               </h2>
             </div>
             

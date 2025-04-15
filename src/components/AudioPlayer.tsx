@@ -21,6 +21,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(0.7);
+  const [audioError, setAudioError] = useState<string | null>(null);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
@@ -41,6 +42,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       
       const setAudioData = () => {
         setDuration(audio.duration);
+        setAudioError(null);
       };
       
       const setAudioTime = () => {
@@ -52,10 +54,17 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         setCurrentTime(0);
       };
       
+      const handleAudioError = (e: any) => {
+        console.error("Audio error:", e);
+        setAudioError("Gagal memuat audio. Coba dengan browser atau internet yang berbeda.");
+        setIsPlaying(false);
+      };
+      
       // Audio event listeners
       audio.addEventListener("loadeddata", setAudioData);
       audio.addEventListener("timeupdate", setAudioTime);
       audio.addEventListener("ended", handleAudioEnd);
+      audio.addEventListener("error", handleAudioError);
       
       // Set initial volume
       audio.volume = volume;
@@ -65,6 +74,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         audio.removeEventListener("loadeddata", setAudioData);
         audio.removeEventListener("timeupdate", setAudioTime);
         audio.removeEventListener("ended", handleAudioEnd);
+        audio.removeEventListener("error", handleAudioError);
       };
     }
   }, [surah]);
@@ -83,6 +93,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       } else {
         audioRef.current.play().catch(err => {
           console.error("Error playing audio:", err);
+          setAudioError("Gagal memutar audio. Browser mungkin memblokir autoplay.");
         });
       }
       setIsPlaying(!isPlaying);
@@ -133,6 +144,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
             size="icon"
             className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-full"
             onClick={togglePlay}
+            disabled={!!audioError}
           >
             {isPlaying ? (
               <Pause className="h-5 w-5" />
@@ -154,6 +166,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
               step={0.1}
               onValueChange={handleSeek}
               className="accent-green-500"
+              disabled={!!audioError}
             />
           </div>
           
@@ -163,7 +176,12 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         </div>
         
         <div className="flex items-center space-x-2 w-full sm:w-auto">
-          <Button variant="ghost" size="icon" onClick={toggleMute}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleMute}
+            disabled={!!audioError}
+          >
             {isMuted ? (
               <VolumeX className="h-5 w-5" />
             ) : (
@@ -178,14 +196,21 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
               step={0.01}
               onValueChange={handleVolumeChange}
               className="accent-green-500"
+              disabled={!!audioError}
             />
           </div>
           
           <div className="ml-2 text-sm text-muted-foreground whitespace-nowrap">
-            Surah {surah.number}: {surah.englishName}
+            Surah {surah.englishName}
           </div>
         </div>
       </div>
+      
+      {audioError && (
+        <div className="text-sm text-red-500 text-center mt-2">
+          {audioError}
+        </div>
+      )}
     </div>
   );
 };

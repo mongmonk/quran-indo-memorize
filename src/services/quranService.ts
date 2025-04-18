@@ -1,18 +1,48 @@
 
 import { Surah, SurahDetail, Ayah } from "@/types/quran";
 
-const DATA_URL = "https://raw.githubusercontent.com/bachors/Al-Quran-ID-API/refs/heads/master/offline/data.json";
+// Primary data source
+const PRIMARY_DATA_URL = "https://raw.githubusercontent.com/bachors/Al-Quran-ID-API/refs/heads/master/offline/data.json";
+// Fallback data URL (could be your own hosted copy)
+const FALLBACK_DATA_URL = "https://hafalan.myquran.cloud/data.json";
+
+// Fetch data with fallback mechanism
+const fetchQuranData = async (): Promise<any[]> => {
+  try {
+    // Try primary source first
+    const response = await fetch(PRIMARY_DATA_URL);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch data: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (primaryError) {
+    console.warn("Primary data source failed, trying fallback:", primaryError);
+    
+    try {
+      // Try fallback source
+      const fallbackResponse = await fetch(FALLBACK_DATA_URL);
+      
+      if (!fallbackResponse.ok) {
+        throw new Error(`Fallback data fetch failed: ${fallbackResponse.status}`);
+      }
+      
+      return await fallbackResponse.json();
+    } catch (fallbackError) {
+      console.error("All data sources failed:", fallbackError);
+      
+      // If both fail, throw a clearer error
+      throw new Error("Tidak dapat mengakses data Al-Quran. Silakan periksa koneksi internet Anda atau coba lagi nanti.");
+    }
+  }
+};
 
 // Fetch all surahs
 export const fetchSurahs = async (): Promise<Surah[]> => {
   try {
-    const response = await fetch(DATA_URL);
+    const data = await fetchQuranData();
     
-    if (!response.ok) {
-      throw new Error(`Failed to fetch surahs: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
     return data.map((surah: any) => ({
       number: parseInt(surah.nomor),
       name: surah.nama,
@@ -30,21 +60,19 @@ export const fetchSurahs = async (): Promise<Surah[]> => {
 // Fetch a specific surah with translation
 export const fetchSurahWithTranslation = async (surahNumber: number): Promise<SurahDetail> => {
   try {
-    const response = await fetch(DATA_URL);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch surah data: ${response.status} ${response.statusText}`);
-    }
-    
-    const allData = await response.json();
+    const allData = await fetchQuranData();
     const surahData = allData.find((surah: any) => parseInt(surah.nomor) === surahNumber);
     
     if (!surahData) {
-      throw new Error(`Surah with number ${surahNumber} not found`);
+      throw new Error(`Surah dengan nomor ${surahNumber} tidak ditemukan`);
     }
     
-    // Fix the audio URL to a more reliable source
-    const audioUrl = `https://server8.mp3quran.net/ahmad_huth/${surahNumber.toString().padStart(3, '0')}.mp3`;
+    // Multiple audio sources for better reliability
+    const audioSources = [
+      `https://server8.mp3quran.net/ahmad_huth/${surahNumber.toString().padStart(3, '0')}.mp3`,
+      `https://download.quranicaudio.com/quran/ahmad_huthayfi/${surahNumber.toString().padStart(3, '0')}.mp3`,
+      `https://hafalan.myquran.cloud/audio/${surahNumber.toString().padStart(3, '0')}.mp3` // Your own hosted backup
+    ];
     
     // Create a SurahDetail object from the data
     const surahDetail: SurahDetail = {
@@ -54,7 +82,8 @@ export const fetchSurahWithTranslation = async (surahNumber: number): Promise<Su
       englishNameTranslation: surahData.arti,
       numberOfAyahs: surahData.ayat.length,
       revelationType: surahData.type,
-      audioUrl: audioUrl,
+      audioUrl: audioSources[0], // Primary audio source
+      audioSources: audioSources, // All audio sources for fallback
       ayahs: surahData.ayat.map((ayah: any, index: number) => ({
         number: index + 1,
         text: ayah.ar,
@@ -80,7 +109,7 @@ export const fetchAyah = async (surahNumber: number, ayahNumber: number): Promis
     const ayah = surah.ayahs.find(a => a.numberInSurah === ayahNumber);
     
     if (!ayah) {
-      throw new Error(`Ayah ${ayahNumber} not found in Surah ${surahNumber}`);
+      throw new Error(`Ayat ${ayahNumber} tidak ditemukan dalam Surah ${surahNumber}`);
     }
     
     return ayah;

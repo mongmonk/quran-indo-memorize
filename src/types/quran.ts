@@ -1,3 +1,4 @@
+
 export interface Surah {
   number: number;
   name: string;
@@ -20,6 +21,7 @@ export interface Ayah {
 export interface SurahDetail extends Surah {
   ayahs: Ayah[];
   audioUrl?: string;
+  audioSources?: string[]; // Added this property to support multiple audio sources
 }
 
 export interface Edition {

@@ -22,6 +22,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(0.7);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [currentAudioSourceIndex, setCurrentAudioSourceIndex] = useState(0);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
@@ -32,10 +33,19 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         audioRef.current.pause();
         setIsPlaying(false);
         
-        audioRef.current.src = surah.audioUrl;
+        // Use the current audio source from the array if available
+        const audioSource = surah.audioSources && surah.audioSources.length > 0 
+          ? surah.audioSources[currentAudioSourceIndex] 
+          : surah.audioUrl;
+        
+        audioRef.current.src = audioSource;
         audioRef.current.load();
       } else {
-        audioRef.current = new Audio(surah.audioUrl);
+        const audioSource = surah.audioSources && surah.audioSources.length > 0 
+          ? surah.audioSources[currentAudioSourceIndex] 
+          : surah.audioUrl;
+        
+        audioRef.current = new Audio(audioSource);
       }
       
       const audio = audioRef.current;
@@ -56,8 +66,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       
       const handleAudioError = (e: any) => {
         console.error("Audio error:", e);
-        setAudioError("Gagal memuat audio. Coba dengan browser atau internet yang berbeda.");
-        setIsPlaying(false);
+        
+        // Try next audio source if available
+        if (surah.audioSources && currentAudioSourceIndex < surah.audioSources.length - 1) {
+          setCurrentAudioSourceIndex(prevIndex => prevIndex + 1);
+        } else {
+          setAudioError("Gagal memuat audio. Coba dengan browser atau internet yang berbeda.");
+          setIsPlaying(false);
+        }
       };
       
       // Audio event listeners
@@ -77,7 +93,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
         audio.removeEventListener("error", handleAudioError);
       };
     }
-  }, [surah]);
+  }, [surah, currentAudioSourceIndex]);
   
   // Update volume when it changes
   useEffect(() => {
@@ -85,6 +101,19 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       audioRef.current.volume = isMuted ? 0 : volume;
     }
   }, [volume, isMuted]);
+  
+  // When audioSource changes, retry loading
+  useEffect(() => {
+    if (audioRef.current && surah.audioSources && surah.audioSources.length > currentAudioSourceIndex) {
+      audioRef.current.src = surah.audioSources[currentAudioSourceIndex];
+      audioRef.current.load();
+      if (isPlaying) {
+        audioRef.current.play().catch(err => {
+          console.error("Error playing from new source:", err);
+        });
+      }
+    }
+  }, [currentAudioSourceIndex, surah.audioSources]);
   
   const togglePlay = () => {
     if (audioRef.current) {
@@ -209,6 +238,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
       {audioError && (
         <div className="text-sm text-red-500 text-center mt-2">
           {audioError}
+          {currentAudioSourceIndex < (surah.audioSources?.length || 0) - 1 && (
+            <span> Mencoba sumber audio alternatif...</span>
+          )}
         </div>
       )}
     </div>
